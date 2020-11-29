@@ -1,3 +1,5 @@
+# Stuff The Internet Says On Scalability For November 6th, 2020 - High Scalability
+
 > Hey, no power outages this week, so it's ﬁnally HighScalability time!
 
 **SPACE TO PASTE IMAGE FROM PAGE 1**

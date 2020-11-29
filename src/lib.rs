@@ -69,8 +69,25 @@ fn parse_node(node: Node, document: &Document) -> Option<String> {
     }
 }
 
+fn get_title(document: &Document) -> Option<String> {
+    let title = document.find(Name("title")).collect::<Vec<_>>();
+    let title = title.get(0);
+    title.map(|node| {
+        let text = node.text();
+        let text = text.replace("annotated pages", "");
+        let text = text.trim();
+        format!("# {}", text)
+    })
+}
+
 pub fn parse_html(html: &str) -> String {
     let document = Document::from(html);
-    let text: Vec<String> = document.find(Any).flat_map(|node| parse_node(node, &document)).collect();
+
+    let mut text: Vec<String> = document.find(Any).flat_map(|node| parse_node(node, &document)).collect();
+
+    if let Some(title) = get_title(&document) {
+        text.insert(0, title);
+    }
+
     text.join("\n\n")
 }
