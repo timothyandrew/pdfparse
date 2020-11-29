@@ -19,32 +19,37 @@ fn find_nearest_subsequent_matching<'a>(node: &Node, predicate: &dyn Predicate, 
     None
 }
 
-fn parse_paragraph(node: &Node) -> Option<String> {
-    let text = node.find(Class("highlight"));
-    let text = text.map(|node| node.text().trim().to_owned());
-    let text = text.filter(|s| s.len() > 0 || s != "…");
-    let text: Vec<String> = text.collect();
+fn parse_node_recursively(node: &Node) -> Vec<String> {
+    let mut italic = false;
 
-    if text.len() == 0 {
-        None
-    } else {
-        let text = text.join(" ");
-        let text = text.trim();
-        let text = format!("> {}", text);
-        Some(text)
-    }
-}
+    if Class("_bc58d0099348bf91").matches(&node) { italic = true; }
 
-fn parse_note(node: &Node) -> Option<String> {
-    if let Some(c) = node.attr("class") {
-        if c == "" {
-            None
+    let mut results = if Text.matches(&node) {
+        if node.text().trim().len() > 0 {
+            vec![node.text().trim().to_owned()]
         } else {
-            Some(node.text())
+            vec![]
         }
     } else {
-        None
+        node.children().map(|n| { parse_node_recursively(&n) }).flatten().collect()
+    };
+
+    if italic {
+        results.insert(0, " *".to_owned());
+        results.push("* ".to_owned());
     }
+
+    results
+}
+
+fn parse_paragraph(node: &Node) -> Vec<String> {
+    let children = node.find(Class("highlight"));
+    children.map(|n| parse_node_recursively(&n)).flatten().collect()
+}
+
+fn parse_note(node: &Node) -> Vec<String> {
+    let children = node.find(Name("span"));
+    children.map(|n| parse_node_recursively(&n)).flatten().collect()
 }
 
 fn parse_rectangle(node: &Node, document: &Document) -> String {
@@ -59,11 +64,20 @@ fn parse_rectangle(node: &Node, document: &Document) -> String {
 
 fn parse_node(node: Node, document: &Document) -> Option<String> {
     if Name("p").matches(&node) {
-        parse_paragraph(&node)
+        let text = parse_paragraph(&node);
+        if text.len() > 0 {
+            let text = text.join(" ");
+            let text = format!("> {}", text);
+            Some(text)
+        } else {
+            None
+        }
     } else if Text.matches(&node) && node.text() == "Rectangle" {
         Some(parse_rectangle(&node, &document))
-    } else if And(Name("span"), Not(Class("highlight"))).matches(&node) {
-        parse_note(&node)
+    } else if Class("with-border").matches(&node) {
+        let text = parse_note(&node);
+        let text = text.join("");
+        Some(text)
     } else {
         None
     }
@@ -85,9 +99,9 @@ pub fn parse_html(html: &str) -> String {
 
     let mut text: Vec<String> = document.find(Any).flat_map(|node| parse_node(node, &document)).collect();
 
-    if let Some(title) = get_title(&document) {
-        text.insert(0, title);
-    }
+    // if let Some(title) = get_title(&document) {
+    //     text.insert(0, title);
+    // }
 
     text.join("\n\n")
 }
