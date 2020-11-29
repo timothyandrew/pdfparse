@@ -1,17 +1,21 @@
 use select::document::Document;
 use select::node::Node;
-use select::predicate::{Predicate, Any, Class, Name, Text, And, Not};
+use select::predicate::{Any, Class, Name, Predicate, Text};
 
 /// Find first node occurring _after_ the passed node
-/// matching the given predicate. Limits search to 
+/// matching the given predicate. Limits search to
 /// 10 subsequent nodes.
-fn find_nearest_subsequent_matching<'a>(node: &Node, predicate: &dyn Predicate, document: &'a Document) -> Option<Node<'a>> {
+fn find_nearest_subsequent_matching<'a>(
+    node: &Node,
+    predicate: &dyn Predicate,
+    document: &'a Document,
+) -> Option<Node<'a>> {
     let index = node.raw().index;
 
     for i in (index + 1)..(index + 12) {
         if let Some(node) = document.nth(i) {
             if predicate.matches(&node) {
-                return Some(node)
+                return Some(node);
             }
         }
     }
@@ -22,7 +26,9 @@ fn find_nearest_subsequent_matching<'a>(node: &Node, predicate: &dyn Predicate, 
 fn parse_node_recursively(node: &Node) -> Vec<String> {
     let mut italic = false;
 
-    if Class("_bc58d0099348bf91").matches(&node) { italic = true; }
+    if Class("_bc58d0099348bf91").matches(&node) {
+        italic = true;
+    }
 
     let mut results = if Text.matches(&node) {
         if node.text().trim().len() > 0 {
@@ -31,7 +37,10 @@ fn parse_node_recursively(node: &Node) -> Vec<String> {
             vec![]
         }
     } else {
-        node.children().map(|n| { parse_node_recursively(&n) }).flatten().collect()
+        node.children()
+            .map(|n| parse_node_recursively(&n))
+            .flatten()
+            .collect()
     };
 
     if italic {
@@ -44,12 +53,18 @@ fn parse_node_recursively(node: &Node) -> Vec<String> {
 
 fn parse_paragraph(node: &Node) -> Vec<String> {
     let children = node.find(Class("highlight"));
-    children.map(|n| parse_node_recursively(&n)).flatten().collect()
+    children
+        .map(|n| parse_node_recursively(&n))
+        .flatten()
+        .collect()
 }
 
 fn parse_note(node: &Node) -> Vec<String> {
     let children = node.find(Name("span"));
-    children.map(|n| parse_node_recursively(&n)).flatten().collect()
+    children
+        .map(|n| parse_node_recursively(&n))
+        .flatten()
+        .collect()
 }
 
 fn parse_rectangle(node: &Node, document: &Document) -> String {
@@ -57,8 +72,11 @@ fn parse_rectangle(node: &Node, document: &Document) -> String {
     let page_number = find_nearest_subsequent_matching(&node, &page_number, &document);
 
     match page_number {
-        Some(node) => format!("**SPACE TO PASTE IMAGE FROM {}**", node.text().to_uppercase()),
-        None => "**SPACE TO PASTE IMAGE**".to_owned()
+        Some(node) => format!(
+            "**SPACE TO PASTE IMAGE FROM {}**",
+            node.text().to_uppercase()
+        ),
+        None => "**SPACE TO PASTE IMAGE**".to_owned(),
     }
 }
 
@@ -97,7 +115,10 @@ fn get_title(document: &Document) -> Option<String> {
 pub fn parse_html(html: &str) -> String {
     let document = Document::from(html);
 
-    let mut text: Vec<String> = document.find(Any).flat_map(|node| parse_node(node, &document)).collect();
+    let text: Vec<String> = document
+        .find(Any)
+        .flat_map(|node| parse_node(node, &document))
+        .collect();
 
     // if let Some(title) = get_title(&document) {
     //     text.insert(0, title);

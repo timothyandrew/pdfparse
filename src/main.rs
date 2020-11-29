@@ -2,7 +2,9 @@ use std::io::{self, Read};
 
 fn read_input() -> String {
     let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer).expect("Pass in HTML via STDIN");
+    io::stdin()
+        .read_to_string(&mut buffer)
+        .expect("Pass in HTML via STDIN");
     buffer
 }
 
