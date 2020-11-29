@@ -31,7 +31,7 @@ fn parse_node_recursively(node: &Node) -> Vec<String> {
     }
 
     let mut results = if Text.matches(&node) {
-        if node.text().trim().len() > 0 {
+        if !node.text().trim().is_empty() {
             vec![node.text().trim().to_owned()]
         } else {
             vec![]
@@ -83,7 +83,7 @@ fn parse_rectangle(node: &Node, document: &Document) -> String {
 fn parse_node(node: Node, document: &Document) -> Option<String> {
     if Name("p").matches(&node) {
         let text = parse_paragraph(&node);
-        if text.len() > 0 {
+        if !text.is_empty() {
             let text = text.join(" ");
             let text = format!("> {}", text);
             Some(text)
